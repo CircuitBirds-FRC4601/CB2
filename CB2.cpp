@@ -9,9 +9,9 @@ public:
 		backLeft		=		new Victor(3);
 		frontRight		=		new Victor(4);
 		backRight		=		new Victor(5);
-		wheelSpin		=		new Victor(6);
-		shooterWinch	=		new Victor(7);
-		rotatePickup	=		new Victor(8);
+		spinMotor		=		new Victor(6);
+		winchMotor		=		new Victor(7);
+		pickupMotor		=		new Victor(8);
 		flapperMotor	=		new Victor(9);
 
 		drive			=		new RobotDrive(frontLeft, backLeft, frontRight, backRight);
@@ -24,8 +24,7 @@ public:
 		rightEncoder	=		new AugmentedEncoder(3, 4, d_p_t_drive, false);
 		leftEncoder		=		new AugmentedEncoder(5, 6, d_p_t_drive, true);
 		winchEncoder	=		new AugmentedEncoder(7, 8, d_p_t_winch, true);
-		pickupEncoder	=		new AugmentedEncoder(9, 10, d_p_t_pickup, false);
-		
+		pickupEncoder	=		new AugmentedEncoder(9, 10, d_p_t_pickup, false);	
 		flapEncoder		=		new AnalogChannel(1, 1);
 		
 		pumpAir			=		new Compressor(1,1);
@@ -36,9 +35,7 @@ public:
 		pilotPad		=		new LogitechGamepad(3);
 		
 		autotimer		=		new Timer();
-		teletimer		=		new Timer();
-		shoottimer		=		new Timer();
-		
+		teletimer		=		new Timer();	
 		winchSwitch		=		new DigitalInput(2);
 
 		autoPeriodicLoops = 0;
@@ -50,6 +47,7 @@ public:
 		rightD		=		0;
 		winchD		=		0;
 		pickupA		=		0;
+		winchS		=		1;
 		
 		leftEncoder->Start();
 		rightEncoder->Start();
@@ -135,12 +133,12 @@ public:
 		
 		if (autonMode == 1) {				//Left or Right
 			if ((rightD < 48) && (leftD < 48)) {
-				DriveAuton(.5);
+				DriveAuton(1.0);
 				driveDone = false;
 			}
 			
 			else if ((rightD > 50) && (leftD > 50)) {
-				DriveAuton(-.5);
+				DriveAuton(-.75);
 				driveDone = false;
 			}
 			
@@ -225,13 +223,13 @@ public:
 	void Write2LCD() {	
 		dsLCD->Printf(DriverStationLCD::kUser_Line1, 1, "Flap Angle: %f", flapA);
 				
-		dsLCD->Printf(DriverStationLCD::kUser_Line2, 1, "Auto Mode: %f", autonMode);
+		dsLCD->Printf(DriverStationLCD::kUser_Line2, 1, "Winch Switch: %f", winchS);
 				
-		dsLCD->Printf(DriverStationLCD::kUser_Line3, 1, "Shoot Delay: %f", shootDelay);
+		dsLCD->Printf(DriverStationLCD::kUser_Line3, 1, "Winch Distance: %f", winchD);
 		
-		dsLCD->Printf(DriverStationLCD::kUser_Line4, 1, "Auto Timer: %f", aTimer);
+		dsLCD->Printf(DriverStationLCD::kUser_Line4, 1, "Right Distance: %f", rightD);
 		
-		dsLCD->Printf(DriverStationLCD::kUser_Line5, 1, "Winch Distance: %f", winchD);
+		dsLCD->Printf(DriverStationLCD::kUser_Line5, 1, "Left Distance: %f", leftD);
 		
 		dsLCD->Printf(DriverStationLCD::kUser_Line6, 1, "Pickup Angle %f", pickupA);		
 		
@@ -247,7 +245,7 @@ public:
 			hookRelease->Set(IN);
 		}
 		
-		else if (shootBall == true && winchS == false) {
+		else if (shootBall == true && winchS == 1) {
 			hookRelease->Set(OUT);
 		}
 		
@@ -255,49 +253,52 @@ public:
 		}
 		
 		if (winchDown == true && winchS == 1) {
-			shooterWinch->Set(1.0);
+			winchMotor->Set(-1.0);
+			
 			winchS = winchSwitch->Get();
 		}
 		
-		else if (winchUp == true && ((winchS == 1) || (winchS == 0))) {
-			shooterWinch->Set(-1.0);
+		else if ((winchUp == true) && ((winchS == 1) || (winchS == 0))) {
+			winchMotor->Set(1.0);
 		}
 		
-		else if (winchS == 0 && ((winchDown == true) || (winchDown == false))) {
-			shooterWinch->Set(0.0);
+		else if (winchS == 0 && winchDown == true) {
+			winchMotor->Set(0.0);
 			hookRelease->Set(OUT);
 			
-			winchS = 1;
+			winchEncoder->Reset();
+			winchD = 0;
 		}
 		
 		else{
-			shooterWinch->Set(0.0);
-		}	
+			winchMotor->Set(0.0);
+			winchS = 1;
+		}
 	}
 	
 	void TeleopControls() {
 		if (rightPadY >= 0.1) {					//Arm Wheel Control
-			wheelSpin->Set(rightPadY);
+			spinMotor->Set(rightPadY);
 		}
 		
 		else if (rightPadY <= -0.1) {
-			wheelSpin->Set(rightPadY);
+			spinMotor->Set(rightPadY);
 		}
 		
 		else {
-			wheelSpin->Set(0.0);
+			spinMotor->Set(0.0);
 		}
 
 		if (leftPadY >= 0.1) {					//Arm Tilt Control
-			rotatePickup->Set(leftPadY);
+			pickupMotor->Set(leftPadY);
 		}
 			
 		else if (leftPadY <= -0.1) {
-			rotatePickup->Set(leftPadY);
+			pickupMotor->Set(leftPadY);
 		}
 		
 		else {
-			rotatePickup->Set(0.0);
+			pickupMotor->Set(0.0);
 		}
 
 
@@ -381,8 +382,8 @@ public:
 	void DriveAuton(float x) {			//Insert Motor Speeds
 		frontLeft->Set(x);
 		backLeft->Set(x);
-		frontRight->Set(-x);
-		backLeft->Set(-x);
+		frontRight->Set(-.75 * x);
+		backLeft->Set(-.75 * x);
 	}
 	
 	void PickupRotator(int y) {			//Insert Angle
@@ -400,34 +401,34 @@ public:
 
 		if (signStore == -1) {
 			if (pickupA > (y - 2)) {
-				rotatePickup->Set(-0.3);
+				pickupMotor->Set(-0.3);
 			}
 			
 			else if (pickupA < (y + 2)) {
-				rotatePickup->Set(0.2);
+				pickupMotor->Set(0.2);
 			}
 			
 			else {
-				rotatePickup->Set(0.0);
+				pickupMotor->Set(0.0);
 			}
 		}
 		
 		else if (signStore == 1) {
 			if (pickupA < (y - 2)) {
-				rotatePickup->Set(0.2);
+				pickupMotor->Set(0.2);
 			}
 			
 			else if (pickupA > (y + 2)) {
-				rotatePickup->Set(-0.3);
+				pickupMotor->Set(-0.3);
 			}
 			
 			else {
-				rotatePickup->Set(0.0);
+				pickupMotor->Set(0.0);
 			}
 		}
 		
 		else {
-			rotatePickup->Set(0.0);
+			pickupMotor->Set(0.0);
 		}
 	}
 	

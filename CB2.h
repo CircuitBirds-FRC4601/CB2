@@ -24,9 +24,9 @@ Victor *frontLeft;
 Victor *backLeft;
 Victor *frontRight;
 Victor *backRight;
-Victor *wheelSpin;
-Victor *shooterWinch;
-Victor *rotatePickup;
+Victor *spinMotor;
+Victor *winchMotor;
+Victor *pickupMotor;
 Victor *flapperMotor;
 
 #define OUT			DoubleSolenoid::kForward
@@ -107,16 +107,15 @@ float flap;
  */
 DigitalInput *winchSwitch;
 int winchS;
+bool winchR;
 
 /*
  * Timers
  */
 Timer *autotimer;
 Timer *teletimer;
-Timer *shoottimer;
 float aTimer;
 float tTimer;
-float sTimer;
 
 /*
  * Miscellaneous
