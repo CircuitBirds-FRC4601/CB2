@@ -1,15 +1,44 @@
-#ifndef CB2_H_
-#define CB2_H_
-
 #include "WPILib.h"
 #include "LogitechGamepad.h"
 #include "TractionControl.h"
 #include "Math.h"
+#include "SimPID.h"
+
+/*
+ * Defines
+ */
+#define OUT			DoubleSolenoid::kForward
+#define IN			DoubleSolenoid::kReverse
+#define OFF			DoubleSolenoid::kOff
+
+#define DRIVEKP		0.070						//Test at Buckeye to find
+#define DRIVEKI		0.000
+#define DRIVEKD		0.000
+float leftM;
+float rightM;
+
+#define FLAPPERKP	0.007						//Test at Buckeye to find
+#define FLAPPERKI	0.000
+#define FLAPPERKD	0.000
+float flapperM;
+
+#define PICKUPKP	0.035						//Test at Buckeye to find
+#define PICKUPKI	0.000
+#define PICKUPKD	0.000
+float pickupM;
 
 /*
  * Drive Train
  */
 RobotDrive *drive;
+
+/*
+ * PID
+ */
+SimPID *leftPID;
+SimPID *rightPID;
+SimPID *flapperPID;
+SimPID *pickupPID;
 
 /*
  * Pneumatics
@@ -29,17 +58,11 @@ Victor *winchMotor;
 Victor *pickupMotor;
 Victor *flapperMotor;
 
-#define OUT			DoubleSolenoid::kForward
-#define IN			DoubleSolenoid::kReverse
-#define OFF			DoubleSolenoid::kOff
-
 /*
  * Driver Station
  */
-DriverStation *ds;						// driver station object
+DriverStation *ds;
 DriverStationLCD *dsLCD;
-UINT32 priorPacketNumber;					// keep track of the most recent packet number from the DS
-UINT8 dsPacketsReceivedInCurrentSecond;	// keep track of the ds packets received in the current second
 
 /*
  * Controls
@@ -47,31 +70,27 @@ UINT8 dsPacketsReceivedInCurrentSecond;	// keep track of the ds packets received
 Joystick *rightStick;
 Joystick *leftStick;
 LogitechGamepad *pilotPad;
+
 float leftAxisY;
 float rightAxisY;
-float rightPadY;
 float leftPadY;
 
 bool flapUp;
 bool flapDown;
-
-bool preset1;
-bool preset2;
-bool preset3;
-bool preset4;
-
+bool highGoalShot;
+bool lowGoalShot;
+bool trussShot;
+bool passBall;
+bool lineDrive;
+bool loadBall;
 bool shootBall;
 bool shootRetract;
-bool shoot;
+bool spinIn;
+bool spinOut;
 
-bool winchDown;
-bool winchUp;
-
-bool driveDone;
 bool autonFlap;
 
 float shootDelay;
-float autonMode;
 
 /*
  * Encoders
@@ -89,25 +108,21 @@ double d_p_t_pickup = (44 * 4 * atan(1)) / 360;
 int signStore;
 
 float rightD;
-float rightV;
 float leftD;
-float leftV;
-float pickupD;
-float pickupV;
 float pickupA;
 float winchD;
-float winchV;
-
-float flapA;
 float flap;
+float flapA;
+int flapStore;
+int winchStore;
+int pickupStore;
 
+bool driveDone;
+bool flapDone;
+bool winchDone;
 
-/*
- * Sensors
- */
 DigitalInput *winchSwitch;
 int winchS;
-bool winchR;
 
 /*
  * Timers
@@ -121,8 +136,4 @@ float tTimer;
  * Miscellaneous
  */
 UINT32 autoPeriodicLoops;
-UINT32 disabledPeriodicLoops;
 UINT32 telePeriodicLoops;	
-
-
-#endif
